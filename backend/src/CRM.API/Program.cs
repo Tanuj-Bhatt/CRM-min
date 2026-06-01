@@ -2,7 +2,6 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-
 using CRM.Business.Security;
 using CRM.Business.Services;
 using CRM.DataProvider;
@@ -14,9 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Database
 // ---------------------------------------------------------------------------
 builder.Services.AddDbContext<CRMContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
-
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 46))
+    ));
 // ---------------------------------------------------------------------------
 // Dependency Injection – Data layer
 // ---------------------------------------------------------------------------
@@ -90,7 +90,11 @@ builder.Services.AddCors(options =>
 // ---------------------------------------------------------------------------
 // Controllers
 // ---------------------------------------------------------------------------
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // ---------------------------------------------------------------------------
 // Swagger

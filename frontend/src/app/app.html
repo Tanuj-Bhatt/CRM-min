@@ -1,0 +1,71 @@
+<ng-container *ngIf="authService.currentUser() as user; else noAuth">
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar glass-panel">
+      <div class="sidebar-brand">
+        <div class="brand-logo">▲</div>
+        <div class="brand-text">
+          <span class="brand-name">AeroCRM</span>
+          <span class="brand-version">v24.0 Enterprise</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <a routerLink="/leads" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">💼</span>
+          <span class="nav-label">Leads Pipeline</span>
+        </a>
+
+        <a routerLink="/contacts" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Contacts Directory</span>
+        </a>
+
+        <a *ngIf="user.role === 'Admin' || user.role === 'Manager'" routerLink="/team" routerLinkActive="active" class="nav-item">
+          <span class="nav-icon">🛡️</span>
+          <span class="nav-label">Team & Security</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar-glow">{{ user.firstName[0] }}{{ user.lastName[0] }}</div>
+          <div class="user-info">
+            <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+            <span class="user-role badge" [ngClass]="'badge-' + user.role.toLowerCase()">
+              {{ user.role }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Top Header and Main Content -->
+    <div class="main-panel">
+      <header class="app-header glass-panel">
+        <div class="header-left">
+          <span class="org-indicator">🏢</span>
+          <h2>{{ user.organizationName }}</h2>
+        </div>
+        <div class="header-right">
+          <button (click)="logout()" class="btn btn-outline btn-sm">
+            <span>🚪</span> Logout
+          </button>
+        </div>
+      </header>
+
+      <main class="content-viewport">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #noAuth>
+  <router-outlet></router-outlet>
+</ng-template>
