@@ -92,7 +92,7 @@ import { AuthService } from '../../../core/services/auth.service';
 
           <button 
             type="submit" 
-            [disabled]="registerForm.invalid || isLoading()" 
+            [disabled]="isLoading()" 
             class="btn btn-secondary btn-block pulse-primary-glow"
           >
             <span *ngIf="isLoading()">Creating Tenant...</span>
@@ -223,12 +223,22 @@ export class RegisterComponent {
   lastName = '';
   email = '';
   password = '';
-  
+
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
 
   onSubmit(): void {
+    if (!this.orgName.trim() || !this.firstName.trim() || !this.lastName.trim() || !this.email.trim() || !this.password.trim()) {
+      this.errorMessage.set('Please fill out all fields.');
+      return;
+    }
+
+    if (this.password.length < 6) {
+      this.errorMessage.set('Password must be at least 6 characters long.');
+      return;
+    }
+
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
