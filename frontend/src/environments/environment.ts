@@ -1,4 +1,4 @@
 export const environment = {
-  production: false,
-  apiUrl: 'https://localhost:7184/api'
+  production: true,
+  apiUrl: 'https://crm-min-1.onrender.com/api'
 };
