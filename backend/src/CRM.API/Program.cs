@@ -81,6 +81,7 @@ builder.Services.AddCors(options =>
             .WithOrigins(
                 "http://localhost:4200",
                 "https://localhost:4200",
+                "https://crm-min.vercel.app",
                 "https://crm-325er5k3g-holcenic-2210s-projects.vercel.app")
             .SetIsOriginAllowedToAllowWildcardSubdomains()
             .AllowAnyHeader()
