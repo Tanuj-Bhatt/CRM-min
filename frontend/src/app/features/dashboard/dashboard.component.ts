@@ -12,415 +12,167 @@ import { forkJoin } from 'rxjs';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="dashboard-container animate-fade-in">
-      <div class="welcome-section flex-between">
+      <div class="page-header flex-between">
         <div>
           <h1>Executive Dashboard</h1>
           <p class="text-secondary">Overview of your enterprise sales pipeline and performance metrics.</p>
         </div>
-        <div class="actions">
-          <a routerLink="/leads" class="btn btn-primary">
-            <span>➕</span> Add New Lead
-          </a>
-        </div>
+        <a routerLink="/leads" class="btn btn-primary"><span>➕</span> Add Lead</a>
       </div>
 
-      <!-- Loading State -->
-      <div *ngIf="isLoading()" class="loading-state flex-center flex-direction-column">
-        <div class="spinner"></div>
-        <p>Analyzing CRM metrics...</p>
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner"></div><p class="text-muted">Analyzing metrics...</p>
       </div>
 
-      <!-- Dashboard Grid -->
       <div *ngIf="!isLoading()" class="dashboard-content">
         <!-- KPI Cards -->
         <div class="card-grid">
-          <!-- Card 1 -->
           <div class="glass-panel kpi-card">
-            <div class="kpi-icon icon-blue">💼</div>
+            <div class="kpi-icon" style="color:var(--primary)">💼</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ totalLeads() }}</span>
               <span class="kpi-label">Active Leads</span>
             </div>
-            <div class="kpi-badge badge-blue">Pipeline</div>
+            <span class="kpi-tag tag-blue">Pipeline</span>
           </div>
-          <!-- Card 2 -->
           <div class="glass-panel kpi-card">
-            <div class="kpi-icon icon-green">💰</div>
+            <div class="kpi-icon" style="color:var(--success)">💰</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ wonValue() | currency:'USD':'symbol':'1.0-0' }}</span>
               <span class="kpi-label">Closed Won Value</span>
             </div>
-            <div class="kpi-badge badge-green">Revenue</div>
+            <span class="kpi-tag tag-green">Revenue</span>
           </div>
-          <!-- Card 3 -->
           <div class="glass-panel kpi-card">
-            <div class="kpi-icon icon-purple">🎯</div>
+            <div class="kpi-icon" style="color:var(--accent)">🎯</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ conversionRate() | number:'1.0-1' }}%</span>
               <span class="kpi-label">Conversion Rate</span>
             </div>
-            <div class="kpi-badge badge-purple">Success</div>
+            <span class="kpi-tag tag-purple">Success</span>
           </div>
-          <!-- Card 4 -->
           <div class="glass-panel kpi-card">
-            <div class="kpi-icon icon-teal">👥</div>
+            <div class="kpi-icon" style="color:var(--secondary)">👥</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ totalContacts() }}</span>
               <span class="kpi-label">Total Contacts</span>
             </div>
-            <div class="kpi-badge badge-teal">Network</div>
+            <span class="kpi-tag tag-teal">Network</span>
           </div>
         </div>
 
-        <!-- Charts and Reports Section -->
+        <!-- Charts Row -->
         <div class="charts-row">
-          <!-- Custom SVG Pipeline Chart -->
-          <div class="glass-panel chart-card flex-1">
-            <h3>Pipeline Distribution by Status</h3>
-            <div class="chart-container">
-              <svg viewBox="0 0 400 200" class="pipeline-svg">
-                <!-- Status Columns -->
+          <div class="glass-panel chart-card">
+            <h3 class="chart-title">Pipeline by Status</h3>
+            <div class="chart-wrap">
+              <svg viewBox="0 0 400 190" class="pipeline-svg">
                 <g *ngFor="let stage of statusChartData(); let i = index">
-                  <!-- Bar Background -->
-                  <rect [attr.x]="50 + i * 70" y="20" width="36" height="130" rx="4" fill="rgba(255,255,255,0.02)"></rect>
-                  <!-- Bar Foreground (animated height) -->
-                  <rect 
-                    [attr.x]="50 + i * 70" 
-                    [attr.y]="150 - (stage.percentage / 100 * 130)" 
-                    width="36" 
-                    [attr.height]="(stage.percentage / 100 * 130) || 2" 
-                    rx="4" 
-                    [attr.fill]="stage.color"
-                    class="chart-bar"
-                  ></rect>
-                  <!-- Label Value -->
-                  <text 
-                    [attr.x]="68 + i * 70" 
-                    [attr.y]="140 - (stage.percentage / 100 * 130)" 
-                    text-anchor="middle" 
-                    fill="white" 
-                    font-size="10" 
-                    font-weight="bold"
-                  >
-                    {{ stage.count }}
-                  </text>
-                  <!-- Label Status -->
-                  <text 
-                    [attr.x]="68 + i * 70" 
-                    y="170" 
-                    text-anchor="middle" 
-                    fill="#9ca3af" 
-                    font-size="9"
-                  >
-                    {{ stage.name }}
-                  </text>
+                  <rect [attr.x]="40 + i * 68" y="20" width="38" height="130" rx="4" fill="var(--input-bg)"></rect>
+                  <rect
+                    [attr.x]="40 + i * 68"
+                    [attr.y]="150 - (stage.percentage / 100 * 130)"
+                    width="38"
+                    [attr.height]="(stage.percentage / 100 * 130) || 2"
+                    rx="4"
+                    [attr.fill]="stage.color">
+                  </rect>
+                  <text [attr.x]="59 + i * 68" [attr.y]="142 - (stage.percentage / 100 * 130)" text-anchor="middle" class="svg-val">{{ stage.count }}</text>
+                  <text [attr.x]="59 + i * 68" y="172" text-anchor="middle" class="svg-label">{{ stage.name }}</text>
                 </g>
               </svg>
             </div>
           </div>
 
-          <!-- Lead Source Chart (Horizontal bars) -->
-          <div class="glass-panel chart-card flex-1">
-            <h3>Lead Generation Sources</h3>
+          <div class="glass-panel chart-card">
+            <h3 class="chart-title">Lead Sources</h3>
             <div class="source-bars">
               <div *ngFor="let source of sourceChartData()" class="source-row">
-                <div class="source-info flex-between">
+                <div class="flex-between" style="margin-bottom:5px">
                   <span class="source-name">{{ source.name || 'Unknown' }}</span>
-                  <span class="source-count">{{ source.count }} leads</span>
+                  <span class="source-count">{{ source.count }}</span>
                 </div>
                 <div class="bar-bg">
-                  <div class="bar-fill" [style.width]="source.percentage + '%'" [style.background]="source.color"></div>
+                  <div class="bar-fill" [style.width.%]="source.percentage" [style.background]="source.color"></div>
                 </div>
               </div>
-              <div *ngIf="sourceChartData().length === 0" class="empty-state text-muted">
-                No sources registered.
-              </div>
+              <div *ngIf="sourceChartData().length === 0" class="text-muted text-sm">No sources yet.</div>
             </div>
           </div>
         </div>
 
-        <!-- Recent Activities Feed & Recent Leads -->
-        <div class="lists-row">
-          <div class="glass-panel list-card flex-2">
-            <div class="list-header flex-between">
-              <h3>High-Value Leads</h3>
-              <a routerLink="/leads" class="view-all-link">View All Pipeline</a>
-            </div>
-            
-            <div class="custom-table-container">
-              <table class="custom-table">
-                <thead>
-                  <tr>
-                    <th>Lead Name</th>
-                    <th>Company</th>
-                    <th>Status</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let lead of highValueLeads()" [routerLink]="['/leads', lead.id]" class="clickable-row">
-                    <td>
-                      <div class="lead-name-cell">
-                        <div class="lead-avatar">{{ lead.firstName[0] }}{{ lead.lastName[0] }}</div>
-                        <div>
-                          <strong>{{ lead.firstName }} {{ lead.lastName }}</strong>
-                          <div class="text-muted" style="font-size: 0.75rem;">{{ lead.email }}</div>
-                        </div>
+        <!-- High Value Leads Table -->
+        <div class="glass-panel table-card">
+          <div class="flex-between" style="margin-bottom:18px">
+            <h3 class="chart-title" style="margin:0">High-Value Leads</h3>
+            <a routerLink="/leads" class="view-all">View Pipeline →</a>
+          </div>
+          <div class="custom-table-container">
+            <table class="custom-table">
+              <thead>
+                <tr><th>Lead</th><th>Company</th><th>Status</th><th>Value</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let lead of highValueLeads()" [routerLink]="['/leads', lead.id]" style="cursor:pointer">
+                  <td>
+                    <div class="lead-cell">
+                      <div class="lead-av">{{ lead.firstName[0] }}{{ lead.lastName[0] }}</div>
+                      <div>
+                        <strong>{{ lead.firstName }} {{ lead.lastName }}</strong>
+                        <div class="text-muted" style="font-size:.72rem">{{ lead.email }}</div>
                       </div>
-                    </td>
-                    <td>{{ lead.companyName }}</td>
-                    <td>
-                      <span class="badge" [ngClass]="'badge-' + lead.status.toLowerCase()">
-                        {{ lead.status }}
-                      </span>
-                    </td>
-                    <td class="text-success font-semibold">{{ lead.estimatedValue | currency:'USD':'symbol':'1.0-0' }}</td>
-                  </tr>
-                  <tr *ngIf="highValueLeads().length === 0">
-                    <td colspan="4" class="text-center text-muted">No active leads found. Create some in the pipeline!</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    </div>
+                  </td>
+                  <td>{{ lead.companyName }}</td>
+                  <td><span class="badge" [ngClass]="'badge-' + lead.status.toLowerCase()">{{ lead.status }}</span></td>
+                  <td class="text-success font-semibold">{{ lead.estimatedValue | currency:'USD':'symbol':'1.0-0' }}</td>
+                </tr>
+                <tr *ngIf="highValueLeads().length === 0">
+                  <td colspan="4" class="text-center text-muted">No active leads. Create some in the pipeline!</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .dashboard-container {
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
+    .dashboard-container{display:flex;flex-direction:column;gap:22px}
+    .kpi-card{display:flex;align-items:center;padding:20px;gap:16px;position:relative;overflow:hidden}
+    .kpi-icon{font-size:1.6rem;width:50px;height:50px;min-width:50px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:var(--input-bg);border:1px solid var(--border-color)}
+    .kpi-data{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+    .kpi-value{font-size:1.6rem;font-weight:800;color:var(--text-primary);line-height:1}
+    .kpi-label{font-size:.78rem;color:var(--text-secondary);font-weight:500}
+    .kpi-tag{position:absolute;top:10px;right:10px;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+    .tag-blue{background:rgba(99,102,241,.1);color:#818cf8}
+    .tag-green{background:rgba(16,185,129,.1);color:#34d399}
+    .tag-purple{background:rgba(217,70,239,.1);color:#f472b6}
+    .tag-teal{background:rgba(13,148,136,.1);color:#2dd4bf}
 
-    .welcome-section h1 {
-      font-size: 2rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 6px;
-      background: linear-gradient(to right, #ffffff, #9ca3af);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .chart-card{padding:20px}
+    .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);margin-bottom:16px}
+    .chart-wrap{display:flex;justify-content:center}
+    .pipeline-svg{width:100%;max-height:190px}
+    .svg-val{fill:var(--text-primary);font-size:10px;font-weight:700}
+    .svg-label{fill:var(--text-secondary);font-size:9px}
 
-    .loading-state {
-      padding: 80px 0;
-      gap: 16px;
-    }
+    .source-bars{display:flex;flex-direction:column;gap:14px}
+    .source-row{display:flex;flex-direction:column}
+    .source-name{font-size:.8rem;color:var(--text-secondary);font-weight:500}
+    .source-count{font-size:.8rem;color:var(--text-muted);font-weight:600}
+    .bar-bg{height:7px;background:var(--input-bg);border-radius:9999px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:9999px;transition:width .6s ease}
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(99, 102, 241, 0.1);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 1s infinite linear;
-    }
+    .table-card{padding:20px}
+    .view-all{font-size:.8rem;color:var(--primary);text-decoration:none;font-weight:600}
+    .view-all:hover{color:var(--secondary)}
+    .lead-cell{display:flex;align-items:center;gap:10px}
+    .lead-av{width:30px;height:30px;min-width:30px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;color:var(--text-secondary)}
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* KPI Card styling */
-    .kpi-card {
-      display: flex;
-      align-items: center;
-      padding: 24px;
-      gap: 20px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .kpi-icon {
-      font-size: 1.75rem;
-      width: 54px;
-      height: 54px;
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-    }
-
-    .icon-blue { color: var(--primary); box-shadow: 0 0 15px rgba(99, 102, 241, 0.15); }
-    .icon-green { color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
-    .icon-purple { color: var(--accent); box-shadow: 0 0 15px rgba(217, 70, 239, 0.15); }
-    .icon-teal { color: var(--secondary); box-shadow: 0 0 15px rgba(13, 148, 136, 0.15); }
-
-    .kpi-data {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .kpi-value {
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: #ffffff;
-      line-height: 1;
-    }
-
-    .kpi-label {
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    .kpi-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .badge-blue { background-color: rgba(99, 102, 241, 0.1); color: #818cf8; }
-    .badge-green { background-color: rgba(16, 185, 129, 0.1); color: #34d399; }
-    .badge-purple { background-color: rgba(217, 70, 239, 0.1); color: #f472b6; }
-    .badge-teal { background-color: rgba(13, 148, 136, 0.1); color: #2dd4bf; }
-
-    /* Chart row */
-    .charts-row {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-
-    .chart-card {
-      padding: 24px;
-      min-width: 320px;
-    }
-
-    .chart-card h3 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 20px;
-      color: var(--text-primary);
-    }
-
-    .chart-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding-top: 10px;
-    }
-
-    .pipeline-svg {
-      width: 100%;
-      max-height: 180px;
-    }
-
-    .chart-bar {
-      transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), y 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Lead Sources styling */
-    .source-bars {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .source-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .source-name {
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .source-count {
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-    }
-
-    .bar-bg {
-      height: 8px;
-      background-color: rgba(255, 255, 255, 0.03);
-      border-radius: 9999px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      border-radius: 9999px;
-      transition: width 0.6s ease-in-out;
-    }
-
-    /* Lists row */
-    .lists-row {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .list-card {
-      padding: 24px;
-      min-width: 320px;
-    }
-
-    .list-header {
-      margin-bottom: 20px;
-    }
-
-    .list-header h3 {
-      font-size: 1.05rem;
-      font-weight: 700;
-    }
-
-    .view-all-link {
-      font-size: 0.8125rem;
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-      transition: color var(--transition-fast);
-    }
-
-    .view-all-link:hover {
-      color: var(--secondary);
-    }
-
-    .lead-name-cell {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .lead-avatar {
-      width: 32px;
-      height: 32px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border-color);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-
-    .clickable-row {
-      cursor: pointer;
-    }
-
-    .clickable-row:hover {
-      background-color: rgba(255, 255, 255, 0.03);
-    }
-
-    .flex-2 { flex: 2; }
-    .flex-direction-column { flex-direction: column; }
+    @media(max-width:900px){.charts-row{grid-template-columns:1fr}}
+    @media(max-width:480px){.kpi-value{font-size:1.3rem}.kpi-card{padding:15px;gap:12px}}
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -428,94 +180,43 @@ export class DashboardComponent implements OnInit {
   private readonly contactService = inject(ContactService);
 
   readonly isLoading = signal(true);
-  
-  // KPI signals
   readonly totalLeads = signal(0);
   readonly wonValue = signal(0);
   readonly conversionRate = signal(0);
   readonly totalContacts = signal(0);
-  
-  // List signals
   readonly highValueLeads = signal<Lead[]>([]);
   readonly statusChartData = signal<any[]>([]);
   readonly sourceChartData = signal<any[]>([]);
 
-  ngOnInit(): void {
-    this.loadData();
-  }
+  ngOnInit(): void { this.loadData(); }
 
   loadData(): void {
     this.isLoading.set(true);
-
-    forkJoin({
-      leads: this.leadService.getLeads(),
-      contacts: this.contactService.getContacts()
-    }).subscribe({
+    forkJoin({ leads: this.leadService.getLeads(), contacts: this.contactService.getContacts() }).subscribe({
       next: ({ leads, contacts }) => {
         this.totalLeads.set(leads.length);
         this.totalContacts.set(contacts.length);
-
-        // Calculate Revenue details
         const wonLeads = leads.filter(l => l.status === 'Won');
-        const closedLeadsCount = leads.filter(l => l.status === 'Won' || l.status === 'Lost').length;
-        
-        const totalWonVal = wonLeads.reduce((acc, curr) => acc + (Number(curr.estimatedValue) || 0), 0);
-        this.wonValue.set(totalWonVal);
+        const closedCount = leads.filter(l => l.status === 'Won' || l.status === 'Lost').length;
+        this.wonValue.set(wonLeads.reduce((a, c) => a + (Number(c.estimatedValue) || 0), 0));
+        this.conversionRate.set(closedCount > 0 ? (wonLeads.length / closedCount) * 100 : 0);
+        this.highValueLeads.set([...leads].filter(l => l.status !== 'Won' && l.status !== 'Lost').sort((a, b) => b.estimatedValue - a.estimatedValue).slice(0, 5));
 
-        const convRate = closedLeadsCount > 0 ? (wonLeads.length / closedLeadsCount) * 100 : 0;
-        this.conversionRate.set(convRate);
-
-        // Sorting high value leads
-        const sortedLeads = [...leads]
-          .filter(l => l.status !== 'Won' && l.status !== 'Lost')
-          .sort((a, b) => b.estimatedValue - a.estimatedValue)
-          .slice(0, 5);
-        this.highValueLeads.set(sortedLeads);
-
-        // Process status chart data
         const statuses = ['New', 'Contacted', 'Qualified', 'Won', 'Lost'];
         const colors = ['#6366f1', '#0ea5e9', '#a855f7', '#10b981', '#ef4444'];
-        
-        const statusCounts = statuses.map((status, index) => {
-          const count = leads.filter(l => l.status === status).length;
-          return {
-            name: status,
-            count: count,
-            percentage: leads.length > 0 ? (count / leads.length) * 100 : 0,
-            color: colors[index]
-          };
-        });
-        this.statusChartData.set(statusCounts);
+        this.statusChartData.set(statuses.map((s, i) => {
+          const count = leads.filter(l => l.status === s).length;
+          return { name: s, count, percentage: leads.length > 0 ? (count / leads.length) * 100 : 0, color: colors[i] };
+        }));
 
-        // Process source chart data
         const sourceMap = new Map<string, number>();
-        leads.forEach(l => {
-          const src = l.source || 'Other';
-          sourceMap.set(src, (sourceMap.get(src) || 0) + 1);
-        });
-
-        const sortedSources = Array.from(sourceMap.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 4);
-
-        const maxCount = sortedSources.length > 0 ? Math.max(...sortedSources.map(s => s.count)) : 1;
-        const sourceChart = sortedSources.map((s, i) => {
-          const colorList = ['#6366f1', '#0d9488', '#d946ef', '#0ea5e9'];
-          return {
-            name: s.name,
-            count: s.count,
-            percentage: (s.count / maxCount) * 100,
-            color: colorList[i % colorList.length]
-          };
-        });
-        this.sourceChartData.set(sourceChart);
-
+        leads.forEach(l => { const s = l.source || 'Other'; sourceMap.set(s, (sourceMap.get(s) || 0) + 1); });
+        const sorted = Array.from(sourceMap.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 4);
+        const maxC = sorted.length > 0 ? Math.max(...sorted.map(s => s.count)) : 1;
+        this.sourceChartData.set(sorted.map((s, i) => ({ ...s, percentage: (s.count / maxC) * 100, color: ['#6366f1','#0d9488','#d946ef','#0ea5e9'][i % 4] })));
         this.isLoading.set(false);
       },
-      error: () => {
-        this.isLoading.set(false);
-      }
+      error: () => this.isLoading.set(false)
     });
   }
 }
