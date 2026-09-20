@@ -15,11 +15,11 @@ import { forkJoin } from 'rxjs';
       <div class="welcome-section flex-between">
         <div>
           <h1>Executive Dashboard</h1>
-          <p class="text-secondary">Overview of your enterprise sales pipeline and performance metrics.</p>
+          <p class="text-secondary">Overview of your enterprise sales pipeline, win/loss conversion, and rep performance.</p>
         </div>
-        <div class="actions">
+        <div class="actions flex-center gap-10">
           <a routerLink="/leads" class="btn btn-primary">
-            <span>➕</span> Add New Lead
+            <span>➕</span> New Lead
           </a>
         </div>
       </div>
@@ -34,41 +34,44 @@ import { forkJoin } from 'rxjs';
       <div *ngIf="!isLoading()" class="dashboard-content">
         <!-- KPI Cards -->
         <div class="card-grid">
-          <!-- Card 1 -->
+          <!-- Card 1: Active Leads -->
           <div class="glass-panel kpi-card">
             <div class="kpi-icon icon-blue">💼</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ totalLeads() }}</span>
-              <span class="kpi-label">Active Leads</span>
+              <span class="kpi-label">Active Deals</span>
             </div>
             <div class="kpi-badge badge-blue">Pipeline</div>
           </div>
-          <!-- Card 2 -->
+
+          <!-- Card 2: Closed Won Value -->
           <div class="glass-panel kpi-card">
             <div class="kpi-icon icon-green">💰</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ wonValue() | currency:'USD':'symbol':'1.0-0' }}</span>
-              <span class="kpi-label">Closed Won Value</span>
+              <span class="kpi-label">Closed Won Revenue</span>
             </div>
             <div class="kpi-badge badge-green">Revenue</div>
           </div>
-          <!-- Card 3 -->
+
+          <!-- Card 3: Conversion Rate -->
           <div class="glass-panel kpi-card">
             <div class="kpi-icon icon-purple">🎯</div>
             <div class="kpi-data">
               <span class="kpi-value">{{ conversionRate() | number:'1.0-1' }}%</span>
-              <span class="kpi-label">Conversion Rate</span>
+              <span class="kpi-label">Win / Loss Ratio</span>
             </div>
             <div class="kpi-badge badge-purple">Success</div>
           </div>
-          <!-- Card 4 -->
+
+          <!-- Card 4: Average Deal Size -->
           <div class="glass-panel kpi-card">
-            <div class="kpi-icon icon-teal">👥</div>
+            <div class="kpi-icon icon-teal">⚡</div>
             <div class="kpi-data">
-              <span class="kpi-value">{{ totalContacts() }}</span>
-              <span class="kpi-label">Total Contacts</span>
+              <span class="kpi-value">{{ avgDealSize() | currency:'USD':'symbol':'1.0-0' }}</span>
+              <span class="kpi-label">Average Won Deal</span>
             </div>
-            <div class="kpi-badge badge-teal">Network</div>
+            <div class="kpi-badge badge-teal">Efficiency</div>
           </div>
         </div>
 
@@ -76,7 +79,7 @@ import { forkJoin } from 'rxjs';
         <div class="charts-row">
           <!-- Custom SVG Pipeline Chart -->
           <div class="glass-panel chart-card flex-1">
-            <h3>Pipeline Distribution by Status</h3>
+            <h3>Pipeline Distribution by Stage</h3>
             <div class="chart-container">
               <svg viewBox="0 0 400 200" class="pipeline-svg">
                 <!-- Status Columns -->
@@ -121,19 +124,19 @@ import { forkJoin } from 'rxjs';
 
           <!-- Lead Source Chart (Horizontal bars) -->
           <div class="glass-panel chart-card flex-1">
-            <h3>Lead Generation Sources</h3>
+            <h3>Lead Acquisition Channels</h3>
             <div class="source-bars">
               <div *ngFor="let source of sourceChartData()" class="source-row">
                 <div class="source-info flex-between">
-                  <span class="source-name">{{ source.name || 'Unknown' }}</span>
-                  <span class="source-count">{{ source.count }} leads</span>
+                  <span class="source-name">{{ source.name || 'Other' }}</span>
+                  <span class="source-count">{{ source.count }} deals</span>
                 </div>
                 <div class="bar-bg">
                   <div class="bar-fill" [style.width]="source.percentage + '%'" [style.background]="source.color"></div>
                 </div>
               </div>
               <div *ngIf="sourceChartData().length === 0" class="empty-state text-muted">
-                No sources registered.
+                No channel sources recorded yet.
               </div>
             </div>
           </div>
@@ -141,20 +144,21 @@ import { forkJoin } from 'rxjs';
 
         <!-- Recent Activities Feed & Recent Leads -->
         <div class="lists-row">
+          <!-- Table 1: High-Value Leads -->
           <div class="glass-panel list-card flex-2">
             <div class="list-header flex-between">
-              <h3>High-Value Leads</h3>
-              <a routerLink="/leads" class="view-all-link">View All Pipeline</a>
+              <h3>High-Value Opportunities</h3>
+              <a routerLink="/leads" class="view-all-link">View Full Pipeline →</a>
             </div>
             
             <div class="custom-table-container">
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Lead Name</th>
+                    <th>Lead Contact</th>
                     <th>Company</th>
-                    <th>Status</th>
-                    <th>Value</th>
+                    <th>Stage</th>
+                    <th>Est. Value</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,10 +181,37 @@ import { forkJoin } from 'rxjs';
                     <td class="text-success font-semibold">{{ lead.estimatedValue | currency:'USD':'symbol':'1.0-0' }}</td>
                   </tr>
                   <tr *ngIf="highValueLeads().length === 0">
-                    <td colspan="4" class="text-center text-muted">No active leads found. Create some in the pipeline!</td>
+                    <td colspan="4" class="text-center text-muted">No open leads found in pipeline.</td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Table 2: Sales Team Performance Leaderboard -->
+          <div class="glass-panel list-card flex-1">
+            <div class="list-header flex-between">
+              <h3>🏆 Top Performers</h3>
+              <span class="badge badge-teal">Won Deals</span>
+            </div>
+
+            <div class="leaderboard-list">
+              <div *ngFor="let rep of leaderboard()" class="leaderboard-item flex-between">
+                <div class="rep-info flex-center gap-10">
+                  <span class="rank-badge rank-{{ rep.rank }}">{{ getRankIcon(rep.rank) }}</span>
+                  <div>
+                    <strong class="rep-name">{{ rep.name }}</strong>
+                    <div class="text-muted" style="font-size: 0.75rem;">{{ rep.wonDeals }} won deal{{ rep.wonDeals > 1 ? 's' : '' }}</div>
+                  </div>
+                </div>
+                <div class="rep-revenue text-success font-semibold">
+                  {{ rep.revenue | currency:'USD':'symbol':'1.0-0' }}
+                </div>
+              </div>
+
+              <div *ngIf="leaderboard().length === 0" class="empty-state text-center text-muted" style="padding: 24px;">
+                No won deals logged yet. Move leads to 'Won' to see representative rankings.
+              </div>
             </div>
           </div>
         </div>
@@ -321,7 +352,6 @@ import { forkJoin } from 'rxjs';
       transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), y 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Lead Sources styling */
     .source-bars {
       display: flex;
       flex-direction: column;
@@ -419,7 +449,28 @@ import { forkJoin } from 'rxjs';
       background-color: rgba(255, 255, 255, 0.03);
     }
 
+    /* Leaderboard */
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .leaderboard-item {
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    .rank-badge {
+      font-size: 1.1rem;
+      min-width: 24px;
+      text-align: center;
+    }
+
     .flex-2 { flex: 2; }
+    .flex-1 { flex: 1; }
     .flex-direction-column { flex-direction: column; }
   `]
 })
@@ -434,9 +485,11 @@ export class DashboardComponent implements OnInit {
   readonly wonValue = signal(0);
   readonly conversionRate = signal(0);
   readonly totalContacts = signal(0);
+  readonly avgDealSize = signal(0);
   
-  // List signals
+  // List & Widget signals
   readonly highValueLeads = signal<Lead[]>([]);
+  readonly leaderboard = signal<{ name: string; wonDeals: number; revenue: number; rank: number }[]>([]);
   readonly statusChartData = signal<any[]>([]);
   readonly sourceChartData = signal<any[]>([]);
 
@@ -455,7 +508,7 @@ export class DashboardComponent implements OnInit {
         this.totalLeads.set(leads.length);
         this.totalContacts.set(contacts.length);
 
-        // Calculate Revenue details
+        // Revenue calculations
         const wonLeads = leads.filter(l => l.status === 'Won');
         const closedLeadsCount = leads.filter(l => l.status === 'Won' || l.status === 'Lost').length;
         
@@ -465,7 +518,27 @@ export class DashboardComponent implements OnInit {
         const convRate = closedLeadsCount > 0 ? (wonLeads.length / closedLeadsCount) * 100 : 0;
         this.conversionRate.set(convRate);
 
-        // Sorting high value leads
+        const avgDeal = wonLeads.length > 0 ? totalWonVal / wonLeads.length : 0;
+        this.avgDealSize.set(avgDeal);
+
+        // Leaderboard calculation
+        const repMap = new Map<string, { wonDeals: number; revenue: number }>();
+        wonLeads.forEach(l => {
+          const rep = l.assignedToUserName || 'Direct Sales';
+          const existing = repMap.get(rep) || { wonDeals: 0, revenue: 0 };
+          existing.wonDeals += 1;
+          existing.revenue += (Number(l.estimatedValue) || 0);
+          repMap.set(rep, existing);
+        });
+
+        const sortedReps = Array.from(repMap.entries())
+          .map(([name, stats]) => ({ name, wonDeals: stats.wonDeals, revenue: stats.revenue, rank: 1 }))
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 5)
+          .map((r, idx) => ({ ...r, rank: idx + 1 }));
+        this.leaderboard.set(sortedReps);
+
+        // Sorting high value open leads
         const sortedLeads = [...leads]
           .filter(l => l.status !== 'Won' && l.status !== 'Lost')
           .sort((a, b) => b.estimatedValue - a.estimatedValue)
@@ -517,5 +590,14 @@ export class DashboardComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  getRankIcon(rank: number): string {
+    switch (rank) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return `#${rank}`;
+    }
   }
 }

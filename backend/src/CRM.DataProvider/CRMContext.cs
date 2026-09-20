@@ -80,5 +80,15 @@ public class CRMContext : DbContext
         modelBuilder.Entity<Lead>()
             .Property(l => l.EstimatedValue)
             .HasPrecision(18, 2);
+
+        // Global Query Filters for Soft Delete
+        modelBuilder.Entity<Lead>().HasQueryFilter(l => !l.IsDeleted);
+        modelBuilder.Entity<Contact>().HasQueryFilter(c => !c.IsDeleted);
+        modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+
+        // Indexes for performance
+        modelBuilder.Entity<Lead>().HasIndex(l => new { l.OrganizationId, l.IsDeleted, l.CreatedAt });
+        modelBuilder.Entity<Contact>().HasIndex(c => new { c.OrganizationId, c.IsDeleted, c.CreatedAt });
+        modelBuilder.Entity<User>().HasIndex(u => new { u.OrganizationId, u.IsDeleted });
     }
 }

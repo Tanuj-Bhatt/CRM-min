@@ -41,6 +41,11 @@ export interface Lead {
   source: string;
   assignedToUserId?: string;
   assignedToUserName?: string;
+  expectedCloseDate?: string;
+  closeReason?: string;
+  score: number;
+  lastContactedAt?: string;
+  isStale: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,4 +82,50 @@ export interface LoginResponse {
   role: Role;
   organizationId: string;
   organizationName: string;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface SendEmailDto {
+  recipientEmail: string;
+  subject: string;
+  body: string;
+}
+
+export interface ImportCsvResult {
+  totalProcessed: number;
+  importedCount: number;
+  failedCount: number;
+  errors: string[];
+}
+
+export interface AutomationSettings {
+  webhookApiKey: string;
+  autoAssignRoundRobin: boolean;
+  staleDealThresholdDays: number;
+  webhookEndpointUrl: string;
+}
+
+export interface UpdateAutomationSettings {
+  autoAssignRoundRobin: boolean;
+  staleDealThresholdDays: number;
+}
+
+export interface WebhookLeadPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  companyName?: string;
+  estimatedValue?: number;
+  source?: string;
+  notes?: string;
 }

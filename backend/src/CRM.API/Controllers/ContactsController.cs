@@ -1,4 +1,7 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using CRM.Business.Services;
 using CRM.Model.DTOs;
@@ -22,6 +25,17 @@ public class ContactsController : BaseApiController
         var orgId = GetOrganizationId();
         var contacts = await _contactService.GetContactsAsync(orgId);
         return Ok(contacts);
+    }
+
+    [HttpGet("paged")]
+    public async Task<IActionResult> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null)
+    {
+        var orgId = GetOrganizationId();
+        var paged = await _contactService.GetPagedContactsAsync(orgId, page, pageSize, search);
+        return Ok(paged);
     }
 
     [HttpGet("{id}")]
@@ -57,5 +71,29 @@ public class ContactsController : BaseApiController
         var success = await _contactService.DeleteContactAsync(id, orgId);
         if (!success) return NotFound(new { message = "Contact not found." });
         return NoContent();
+    }
+
+    // ---- CSV Import & Export ----
+
+    [HttpGet("export/csv")]
+    public async Task<IActionResult> ExportCsv()
+    {
+        var orgId = GetOrganizationId();
+        var bytes = await _contactService.ExportContactsCsvAsync(orgId);
+        return File(bytes, "text/csv", $"aerocrm_contacts_{DateTime.UtcNow:yyyyMMdd}.csv");
+    }
+
+    [HttpPost("import/csv")]
+    public async Task<IActionResult> ImportCsv(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Please upload a valid non-empty CSV file." });
+        }
+
+        var orgId = GetOrganizationId();
+        using var stream = file.OpenReadStream();
+        var result = await _contactService.ImportContactsCsvAsync(stream, orgId);
+        return Ok(result);
     }
 }

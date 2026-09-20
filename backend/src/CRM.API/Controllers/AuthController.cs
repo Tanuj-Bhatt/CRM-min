@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CRM.Business.Services;
 using CRM.Model.DTOs;
 
 namespace CRM.API.Controllers;
 
+[EnableRateLimiting("AuthRatePolicy")]
 [Route("api/[controller]")]
 public class AuthController : BaseApiController
 {

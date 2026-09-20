@@ -8,10 +8,14 @@ namespace CRM.Business.Services;
 public interface ILeadService
 {
     Task<IEnumerable<LeadDto>> GetLeadsAsync(Guid orgId);
+    Task<PagedResult<LeadDto>> GetPagedLeadsAsync(Guid orgId, int page, int pageSize, string? search, CRM.Model.Enums.LeadStatus? status, string? source);
     Task<LeadDto?> GetLeadByIdAsync(Guid id, Guid orgId);
     Task<LeadDto> CreateLeadAsync(CreateLeadDto dto, Guid orgId);
     Task<LeadDto?> UpdateLeadAsync(Guid id, UpdateLeadDto dto, Guid orgId);
     Task<bool> DeleteLeadAsync(Guid id, Guid orgId);
     Task<IEnumerable<ActivityLogDto>> GetActivitiesAsync(Guid leadId, Guid orgId);
     Task<ActivityLogDto> AddActivityAsync(Guid leadId, CreateActivityLogDto dto, Guid userId, Guid orgId);
+    Task<ActivityLogDto> SendEmailAsync(Guid leadId, SendEmailDto dto, Guid userId, Guid orgId);
+    Task<byte[]> ExportLeadsCsvAsync(Guid orgId);
+    Task<ImportCsvResultDto> ImportLeadsCsvAsync(System.IO.Stream csvStream, Guid orgId, Guid userId);
 }

@@ -41,6 +41,10 @@ export const routes: Routes = [
         canActivate: [roleGuard(['Admin', 'Manager'])],
         loadComponent: () => import('./features/team/team.component').then(m => m.TeamComponent)
       },
+      {
+        path: 'automations',
+        loadComponent: () => import('./features/automations/automations.component').then(m => m.AutomationsComponent)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

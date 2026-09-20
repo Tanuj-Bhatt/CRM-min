@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LeadService } from '../../../core/services/lead.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models';
 
 @Component({
@@ -18,10 +19,15 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
           <h1 class="lead-title">{{ lead()?.firstName }} {{ lead()?.lastName }}</h1>
           <span class="company-sub">{{ lead()?.companyName }}</span>
         </div>
-        <div class="status-indicator">
-          <span class="badge" [ngClass]="'badge-' + lead()?.status?.toLowerCase()">
-            {{ lead()?.status }}
-          </span>
+        <div class="header-actions flex-center gap-10">
+          <button (click)="openEmailStudio(false)" class="btn btn-primary btn-sm">
+            <span>✉️</span> Compose Email
+          </button>
+          <div class="status-indicator">
+            <span class="badge" [ngClass]="'badge-' + lead()?.status?.toLowerCase()">
+              {{ lead()?.status }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -32,7 +38,7 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
           
           <!-- Profile Card -->
           <div class="glass-panel profile-card">
-            <h3>Contact Credentials</h3>
+            <h3>Deal & Contact Overview</h3>
             <div class="profile-details">
               <div class="detail-item">
                 <span class="detail-label">Email Address</span>
@@ -43,7 +49,7 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
                 <span class="detail-val">{{ lead()?.phone || 'Not Provided' }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Lead Value</span>
+                <span class="detail-label">Estimated Deal Value</span>
                 <span class="detail-val text-success font-semibold">
                   {{ lead()?.estimatedValue | currency:'USD':'symbol':'1.0-0' }}
                 </span>
@@ -51,6 +57,16 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
               <div class="detail-item">
                 <span class="detail-label">Pipeline Source</span>
                 <span class="detail-val">{{ lead()?.source }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Target Close Date</span>
+                <span class="detail-val text-info">
+                  {{ lead()?.expectedCloseDate ? (lead()?.expectedCloseDate | date:'mediumDate') : 'Not Set' }}
+                </span>
+              </div>
+              <div *ngIf="lead()?.closeReason" class="detail-item">
+                <span class="detail-label">Close Reason</span>
+                <span class="detail-val" style="color: #f472b6;">{{ lead()?.closeReason }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Assigned Representative</span>
@@ -63,9 +79,9 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
           <div class="glass-panel ai-card">
             <div class="ai-header flex-between">
               <h3>✨ Claude AI Sales Assistant</h3>
-              <span class="ai-badge">Anthropic Claude</span>
+              <span class="ai-badge">Claude 3.5 Sonnet</span>
             </div>
-            <p class="text-secondary text-sm">Use AI models to summarize long activity history or draft custom follow-up emails based on client timeline.</p>
+            <p class="text-secondary text-sm">Use AI models to summarize interaction timelines or generate customized follow-up emails.</p>
 
             <div class="ai-actions flex-center gap-10">
               <button 
@@ -93,13 +109,18 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
               <div class="result-text">{{ aiSummary() }}</div>
             </div>
 
-            <!-- AI Email Draft Result -->
+            <!-- AI Email Draft Result with Email Studio Launcher -->
             <div *ngIf="aiEmail()" class="ai-result-box glass-panel animate-fade-in">
               <div class="result-header flex-between">
-                <strong>Follow-Up Email Draft:</strong>
-                <button (click)="copyEmailToClipboard()" class="clear-result-btn text-blue">
-                  {{ emailCopied() ? 'Copied!' : 'Copy Text' }}
-                </button>
+                <strong>Generated Follow-Up Email:</strong>
+                <div class="draft-actions flex-center gap-10">
+                  <button (click)="copyEmailToClipboard()" class="clear-result-btn text-blue">
+                    {{ emailCopied() ? 'Copied!' : 'Copy' }}
+                  </button>
+                  <button (click)="openEmailStudio(true)" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">
+                    🚀 Open in Email Studio
+                  </button>
+                </div>
               </div>
               <div class="result-text font-mono">{{ aiEmail() }}</div>
             </div>
@@ -131,7 +152,7 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
                   [(ngModel)]="newActivity.details" 
                   required 
                   class="form-control text-area" 
-                  placeholder="Record summary of what was discussed, outcomes, or notes..."
+                  placeholder="Record summary of discussion, deal blockers, commitments..."
                   rows="3"
                 ></textarea>
               </div>
@@ -146,7 +167,7 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
 
           <!-- Activity History Timeline -->
           <div class="timeline-card">
-            <h3>Timeline Activities</h3>
+            <h3>Timeline Activities ({{ activities().length }})</h3>
             <div class="timeline">
               <div *ngFor="let act of activities()" class="timeline-item glass-panel">
                 <div class="timeline-badge" [ngClass]="'timeline-badge-' + act.type.toLowerCase()">
@@ -154,7 +175,7 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
                 </div>
                 <div class="timeline-content">
                   <div class="timeline-meta flex-between">
-                    <span class="timeline-type">{{ act.type }} by {{ act.userName }}</span>
+                    <span class="timeline-type">{{ act.type }} · {{ act.userName }}</span>
                     <span class="timeline-time text-muted">{{ act.createdAt | date:'MMM d, y, h:mm a' }}</span>
                   </div>
                   <p class="timeline-details">{{ act.details }}</p>
@@ -162,12 +183,54 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
               </div>
 
               <div *ngIf="activities().length === 0" class="empty-timeline-state glass-panel text-center">
-                No activity history recorded for this lead yet. Use the card above to document call logs and emails.
+                No activity history recorded for this lead yet. Record call logs or compose emails above.
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Email Studio Modal -->
+      <div *ngIf="isEmailModalOpen()" class="modal-backdrop flex-center">
+        <div class="modal-card glass-panel animate-fade-in" style="max-width: 620px;">
+          <div class="modal-header flex-between">
+            <h2>✉️ Interactive Email Studio</h2>
+            <button (click)="closeEmailStudio()" class="close-btn">✕</button>
+          </div>
+
+          <form (ngSubmit)="sendEmailFromStudio()" class="modal-form">
+            <div class="form-group">
+              <label class="form-label">Recipient Email *</label>
+              <input type="email" [(ngModel)]="emailRecipient" name="recipient" required class="form-control" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Subject Line *</label>
+              <input type="text" [(ngModel)]="emailSubject" name="subject" required class="form-control" placeholder="Follow-up on collaboration" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Message Body *</label>
+              <textarea 
+                [(ngModel)]="emailBody" 
+                name="body" 
+                required 
+                class="form-control text-area font-mono" 
+                rows="8"
+                placeholder="Write your email message..."
+              ></textarea>
+            </div>
+
+            <div class="modal-footer flex-between">
+              <button type="button" (click)="closeEmailStudio()" class="btn btn-outline">Cancel</button>
+              <button type="submit" [disabled]="!emailSubject || !emailBody || isSendingEmail()" class="btn btn-primary">
+                {{ isSendingEmail() ? 'Dispatching...' : '🚀 Send Email Now' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
   `,
   styles: [`
@@ -200,53 +263,50 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
       font-size: 2rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      color: white;
+      margin-bottom: 4px;
     }
 
     .company-sub {
-      color: var(--secondary);
-      font-size: 0.9375rem;
-      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      font-weight: 500;
     }
 
-    /* Detail Grid Layout */
     .detail-grid {
       display: grid;
-      grid-template-columns: 1fr 1.5fr;
+      grid-template-columns: 380px 1fr;
       gap: 24px;
-      align-items: start;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
       .detail-grid {
         grid-template-columns: 1fr;
       }
     }
 
-    .col-left, .col-right {
+    .col-left {
       display: flex;
       flex-direction: column;
       gap: 24px;
     }
 
-    /* Cards */
-    .profile-card, .ai-card, .activity-form-card {
+    .profile-card {
       padding: 24px;
+      border-radius: var(--radius-md);
     }
 
-    .profile-card h3, .ai-card h3, .activity-form-card h3, .timeline-card h3 {
-      font-size: 1.05rem;
-      font-weight: 800;
-      margin-bottom: 20px;
-      color: white;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .profile-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
     }
 
     .profile-details {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
     .detail-item {
@@ -257,151 +317,154 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
 
     .detail-label {
       font-size: 0.75rem;
-      color: var(--text-muted);
       text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
       font-weight: 600;
-      letter-spacing: 0.02em;
     }
 
     .detail-val {
-      font-size: 0.9375rem;
+      font-size: 0.95rem;
       color: var(--text-primary);
     }
 
-    /* AI panel */
-    .ai-badge {
-      background-color: rgba(217, 70, 239, 0.1);
-      color: #f472b6;
-      border: 1px solid rgba(217, 70, 239, 0.2);
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
+    /* AI Card */
+    .ai-card {
+      padding: 24px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, rgba(17, 24, 39, 0.7) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.2);
     }
 
-    .ai-card p {
-      margin-bottom: 20px;
+    .ai-header {
+      margin-bottom: 8px;
+    }
+
+    .ai-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid var(--primary);
+      border-radius: 9999px;
+      color: #c7d2fe;
+      font-weight: 600;
     }
 
     .ai-actions {
-      margin-bottom: 20px;
+      margin-top: 16px;
     }
 
     .ai-result-box {
+      margin-top: 16px;
       padding: 16px;
-      background-color: rgba(0, 0, 0, 0.15);
-      border-color: rgba(217, 70, 239, 0.15);
+      background: rgba(0, 0, 0, 0.4);
       border-radius: var(--radius-sm);
-      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .result-header {
-      margin-bottom: 10px;
       font-size: 0.8125rem;
-      color: var(--text-primary);
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .clear-result-btn {
       background: transparent;
       border: none;
       color: var(--text-muted);
-      font-size: 0.75rem;
       cursor: pointer;
+      font-size: 0.75rem;
     }
 
     .clear-result-btn:hover {
-      color: var(--danger);
-    }
-
-    .clear-result-btn.text-blue {
-      color: var(--primary);
-    }
-
-    .clear-result-btn.text-blue:hover {
-      color: var(--secondary);
+      color: white;
     }
 
     .result-text {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
+      font-size: 0.85rem;
       line-height: 1.5;
       white-space: pre-wrap;
+      color: #e2e8f0;
     }
 
     .font-mono {
       font-family: monospace;
-      background: rgba(0,0,0,0.3);
-      padding: 10px;
-      border-radius: 4px;
+      font-size: 0.8rem;
     }
 
-    /* Forms */
+    /* Col Right */
+    .col-right {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .activity-form-card {
+      padding: 24px;
+      border-radius: var(--radius-md);
+    }
+
+    .activity-form-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
     .text-area {
       resize: vertical;
-      min-height: 80px;
     }
 
-    .row-flex {
-      display: flex;
-      gap: 16px;
+    /* Timeline */
+    .timeline-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
     }
 
-    .flex-1 { flex: 1; }
-    .flex-2 { flex: 2; }
-
-    /* Timeline History */
     .timeline {
       display: flex;
       flex-direction: column;
       gap: 16px;
-      position: relative;
-      padding-left: 20px;
-      border-left: 2px solid var(--border-color);
-      margin-left: 10px;
-      margin-top: 10px;
     }
 
     .timeline-item {
-      position: relative;
+      display: flex;
+      gap: 16px;
       padding: 16px;
-      background-color: var(--bg-secondary);
+      border-radius: var(--radius-sm);
     }
 
     .timeline-badge {
-      position: absolute;
-      left: -32px;
-      top: 16px;
-      width: 24px;
-      height: 24px;
-      background-color: var(--bg-secondary);
-      border: 2px solid var(--border-color);
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.75rem;
-      color: white;
+      font-size: 1rem;
+      flex-shrink: 0;
     }
 
-    .timeline-badge-note { border-color: var(--accent); background-color: rgba(217, 70, 239, 0.1); }
-    .timeline-badge-email { border-color: var(--primary); background-color: rgba(99, 102, 241, 0.1); }
-    .timeline-badge-phone { border-color: var(--secondary); background-color: rgba(13, 148, 136, 0.1); }
-    .timeline-badge-meeting { border-color: var(--warning); background-color: rgba(245, 158, 11, 0.1); }
-    .timeline-badge-aisummary { border-color: #ec4899; background-color: rgba(236, 72, 153, 0.1); }
+    .timeline-badge-email { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+    .timeline-badge-phone { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+    .timeline-badge-meeting { border-color: var(--accent); background: rgba(217, 70, 239, 0.1); }
+    .timeline-badge-aisummary { border-color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
 
     .timeline-content {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-
-    .timeline-meta {
-      font-size: 0.8125rem;
+      gap: 6px;
     }
 
     .timeline-type {
-      font-weight: 700;
-      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-primary);
     }
 
     .timeline-time {
@@ -409,38 +472,88 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
     }
 
     .timeline-details {
-      font-size: 0.875rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
       color: var(--text-secondary);
-      line-height: 1.4;
+      white-space: pre-wrap;
     }
 
     .empty-timeline-state {
       padding: 40px 20px;
       color: var(--text-muted);
-      font-size: 0.875rem;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+    }
+
+    .modal-card {
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      border-radius: var(--radius-lg);
+    }
+
+    .modal-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: white;
+    }
+
+    .modal-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
     }
   `]
 })
 export class LeadDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly leadService = inject(LeadService);
+  private readonly toastService = inject(ToastService);
 
   readonly lead = signal<Lead | null>(null);
   readonly activities = signal<ActivityLog[]>([]);
-  
-  // New Activity form
-  newActivity = {
-    type: 'Note',
-    details: ''
-  };
 
-  // AI loading and output
+  // AI Assistant states
   readonly isGeneratingSummary = signal(false);
   readonly isGeneratingEmail = signal(false);
-  readonly isSavingActivity = signal(false);
   readonly aiSummary = signal('');
   readonly aiEmail = signal('');
   readonly emailCopied = signal(false);
+
+  // Email Studio states
+  readonly isEmailModalOpen = signal(false);
+  readonly isSendingEmail = signal(false);
+  emailRecipient = '';
+  emailSubject = '';
+  emailBody = '';
+
+  // New activity form
+  readonly isSavingActivity = signal(false);
+  newActivity = {
+    type: 'Note' as ActivityType,
+    details: ''
+  };
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -452,16 +565,15 @@ export class LeadDetailComponent implements OnInit {
   loadLeadDetails(id: string): void {
     this.leadService.getLeadById(id).subscribe({
       next: (data) => this.lead.set(data),
-      error: (err) => console.error('Failed to load lead details', err)
+      error: () => this.toastService.error('Error', 'Failed to load lead details.')
     });
 
     this.leadService.getActivities(id).subscribe({
       next: (data) => {
-        // Sort descending by creation date
         const sorted = [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.activities.set(sorted);
       },
-      error: (err) => console.error('Failed to load lead activities', err)
+      error: () => console.error('Failed to load activities')
     });
   }
 
@@ -473,14 +585,14 @@ export class LeadDetailComponent implements OnInit {
 
     this.leadService.addActivity(currentLead.id, this.newActivity).subscribe({
       next: (created) => {
-        // Add to activities timeline list (pre-pend since it is sorted desc)
         this.activities.update(list => [created, ...list]);
         this.newActivity.details = '';
         this.isSavingActivity.set(false);
+        this.toastService.success('Interaction Logged', `${created.type} recorded.`);
       },
-      error: (err) => {
-        console.error('Failed to record activity', err);
+      error: () => {
         this.isSavingActivity.set(false);
+        this.toastService.error('Error', 'Failed to log interaction.');
       }
     });
   }
@@ -496,18 +608,10 @@ export class LeadDetailComponent implements OnInit {
       next: (res) => {
         this.aiSummary.set(res.summary);
         this.isGeneratingSummary.set(false);
-        
-        // Also record an activity log indicating that we generated an AI summary!
-        const autoLog = {
-          type: 'AISummary',
-          details: `Generated Claude AI Client Summary: "${res.summary.substring(0, 100)}..."`
-        };
-        this.leadService.addActivity(currentLead.id, autoLog).subscribe({
-          next: (created) => this.activities.update(list => [created, ...list])
-        });
+        this.toastService.info('AI Summary Generated', 'Timeline synthesized.');
       },
       error: (err) => {
-        this.aiSummary.set('Failed to generate summary: ' + (err.error?.message || 'Unexpected backend error.'));
+        this.aiSummary.set('Failed to generate summary: ' + (err.error?.message || 'Error occurred.'));
         this.isGeneratingSummary.set(false);
       }
     });
@@ -525,9 +629,10 @@ export class LeadDetailComponent implements OnInit {
       next: (res) => {
         this.aiEmail.set(res.email);
         this.isGeneratingEmail.set(false);
+        this.toastService.info('Email Drafted', 'Claude composed sales follow-up.');
       },
       error: (err) => {
-        this.aiEmail.set('Failed to draft email: ' + (err.error?.message || 'Unexpected backend error.'));
+        this.aiEmail.set('Failed to draft email: ' + (err.error?.message || 'Error occurred.'));
         this.isGeneratingEmail.set(false);
       }
     });
@@ -539,7 +644,63 @@ export class LeadDetailComponent implements OnInit {
 
     navigator.clipboard.writeText(emailText).then(() => {
       this.emailCopied.set(true);
+      this.toastService.success('Copied', 'Email draft copied to clipboard.');
       setTimeout(() => this.emailCopied.set(false), 2000);
+    });
+  }
+
+  openEmailStudio(fromDraft = false): void {
+    const currentLead = this.lead();
+    if (!currentLead) return;
+
+    this.emailRecipient = currentLead.email;
+
+    if (fromDraft && this.aiEmail()) {
+      const fullText = this.aiEmail();
+      const lines = fullText.split('\n');
+      const subjectLine = lines.find(l => l.toLowerCase().startsWith('subject:'));
+      if (subjectLine) {
+        this.emailSubject = subjectLine.replace(/^subject:\s*/i, '').trim();
+        this.emailBody = lines.filter(l => !l.toLowerCase().startsWith('subject:')).join('\n').trim();
+      } else {
+        this.emailSubject = `Following up with ${currentLead.companyName}`;
+        this.emailBody = fullText;
+      }
+    } else {
+      this.emailSubject = `Following up with ${currentLead.companyName}`;
+      this.emailBody = `Dear ${currentLead.firstName},\n\nI hope this email finds you well.\n\nBest regards,\n`;
+    }
+
+    this.isEmailModalOpen.set(true);
+  }
+
+  closeEmailStudio(): void {
+    this.isEmailModalOpen.set(false);
+  }
+
+  sendEmailFromStudio(): void {
+    const currentLead = this.lead();
+    if (!currentLead) return;
+
+    this.isSendingEmail.set(true);
+
+    const emailDto = {
+      recipientEmail: this.emailRecipient,
+      subject: this.emailSubject,
+      body: this.emailBody
+    };
+
+    this.leadService.sendEmail(currentLead.id, emailDto).subscribe({
+      next: (res) => {
+        this.activities.update(list => [res.activity, ...list]);
+        this.isSendingEmail.set(false);
+        this.closeEmailStudio();
+        this.toastService.success('Email Sent', `Message dispatched to ${this.emailRecipient}.`);
+      },
+      error: (err) => {
+        this.isSendingEmail.set(false);
+        this.toastService.error('Send Failed', err?.error?.message || 'Could not dispatch email.');
+      }
     });
   }
 

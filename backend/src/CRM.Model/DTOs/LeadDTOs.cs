@@ -15,6 +15,11 @@ public record LeadDto(
     string Source,
     Guid? AssignedToUserId,
     string? AssignedToUserName,
+    DateTime? ExpectedCloseDate,
+    string? CloseReason,
+    int Score,
+    DateTime? LastContactedAt,
+    bool IsStale,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );
@@ -28,7 +33,9 @@ public record CreateLeadDto(
     decimal EstimatedValue,
     LeadStatus Status,
     string Source,
-    Guid? AssignedToUserId
+    Guid? AssignedToUserId,
+    DateTime? ExpectedCloseDate = null,
+    string? CloseReason = null
 );
 
 public record UpdateLeadDto(
@@ -40,7 +47,22 @@ public record UpdateLeadDto(
     decimal EstimatedValue,
     LeadStatus Status,
     string Source,
-    Guid? AssignedToUserId
+    Guid? AssignedToUserId,
+    DateTime? ExpectedCloseDate = null,
+    string? CloseReason = null
+);
+
+public record SendEmailDto(
+    string RecipientEmail,
+    string Subject,
+    string Body
+);
+
+public record ImportCsvResultDto(
+    int TotalProcessed,
+    int ImportedCount,
+    int FailedCount,
+    List<string> Errors
 );
 
 public record ActivityLogDto(

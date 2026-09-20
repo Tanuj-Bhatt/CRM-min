@@ -19,6 +19,10 @@ public class Contact
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // Soft delete
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     // Navigation property for activities
     public ICollection<ActivityLog> Activities { get; set; } = new List<ActivityLog>();
 }

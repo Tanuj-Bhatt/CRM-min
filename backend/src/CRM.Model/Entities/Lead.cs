@@ -24,6 +24,16 @@ public class Lead
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? ExpectedCloseDate { get; set; }
+    public string? CloseReason { get; set; }
+
+    // Automation & Scoring
+    public DateTime? LastContactedAt { get; set; }
+    public int Score { get; set; } = 50;
+
+    // Soft delete
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 
     // Navigation property for activities
     public ICollection<ActivityLog> Activities { get; set; } = new List<ActivityLog>();

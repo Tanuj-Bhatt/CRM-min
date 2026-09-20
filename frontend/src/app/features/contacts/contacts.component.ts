@@ -2,7 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ContactService } from '../../core/services/contact.service';
-import { Contact } from '../../core/models/crm.models';
+import { ToastService } from '../../core/services/toast.service';
+import { Contact, ImportCsvResult } from '../../core/models/crm.models';
 
 @Component({
   selector: 'app-contacts',
@@ -14,11 +15,19 @@ import { Contact } from '../../core/models/crm.models';
       <div class="page-header flex-between">
         <div>
           <h1>Contacts Directory</h1>
-          <p class="text-secondary">Manage your enterprise-wide contacts and client relationships.</p>
+          <p class="text-secondary">Manage enterprise client relationships, contact cards, and CSV integrations.</p>
         </div>
-        <button (click)="openCreateModal()" class="btn btn-primary">
-          <span>➕</span> New Contact
-        </button>
+        <div class="actions flex-center gap-10">
+          <button (click)="exportCsv()" [disabled]="isExporting()" class="btn btn-outline" title="Export contacts to CSV">
+            <span>📥</span> {{ isExporting() ? 'Exporting...' : 'Export CSV' }}
+          </button>
+          <button (click)="openImportModal()" class="btn btn-secondary" title="Bulk import contacts from CSV">
+            <span>📤</span> Import CSV
+          </button>
+          <button (click)="openCreateModal()" class="btn btn-primary">
+            <span>➕</span> New Contact
+          </button>
+        </div>
       </div>
 
       <!-- Search & Filters -->
@@ -61,7 +70,7 @@ import { Contact } from '../../core/models/crm.models';
           </div>
 
           <h4 class="contact-name">{{ contact.firstName }} {{ contact.lastName }}</h4>
-          <p class="contact-title">{{ contact.jobTitle || 'No Title' }}</p>
+          <p class="contact-title">{{ contact.jobTitle || 'Representative' }}</p>
           <p class="contact-company">🏢 {{ contact.companyName || 'N/A' }}</p>
 
           <div class="contact-meta">
@@ -81,7 +90,7 @@ import { Contact } from '../../core/models/crm.models';
         </div>
 
         <div *ngIf="filteredContacts().length === 0 && !isLoading()" class="empty-state glass-panel flex-center flex-col">
-          <p class="text-muted">No contacts match your search criteria.</p>
+          <p class="text-muted">No contacts match your criteria.</p>
           <button (click)="openCreateModal()" class="btn btn-outline btn-sm" style="margin-top: 12px;">
             Create First Contact
           </button>
@@ -99,22 +108,22 @@ import { Contact } from '../../core/models/crm.models';
           <form (ngSubmit)="saveContact()" #contactForm="ngForm" class="modal-form">
             <div class="row-flex">
               <div class="form-group flex-1">
-                <label class="form-label">First Name</label>
+                <label class="form-label">First Name *</label>
                 <input type="text" name="firstName" [(ngModel)]="modalContact.firstName" required class="form-control" placeholder="Jane" />
               </div>
               <div class="form-group flex-1">
-                <label class="form-label">Last Name</label>
+                <label class="form-label">Last Name *</label>
                 <input type="text" name="lastName" [(ngModel)]="modalContact.lastName" required class="form-control" placeholder="Smith" />
               </div>
             </div>
 
             <div class="row-flex">
               <div class="form-group flex-1">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" [(ngModel)]="modalContact.email" required class="form-control" placeholder="jane@company.com" />
+                <label class="form-label">Email Address *</label>
+                <input type="email" name="email" [(ngModel)]="modalContact.email" required email class="form-control" placeholder="jane@company.com" />
               </div>
               <div class="form-group flex-1">
-                <label class="form-label">Phone</label>
+                <label class="form-label">Phone Number</label>
                 <input type="text" name="phone" [(ngModel)]="modalContact.phone" class="form-control" placeholder="+1 (555) 987-6543" />
               </div>
             </div>
@@ -122,23 +131,69 @@ import { Contact } from '../../core/models/crm.models';
             <div class="row-flex">
               <div class="form-group flex-1">
                 <label class="form-label">Job Title</label>
-                <input type="text" name="jobTitle" [(ngModel)]="modalContact.jobTitle" class="form-control" placeholder="VP of Engineering" />
+                <input type="text" name="jobTitle" [(ngModel)]="modalContact.jobTitle" class="form-control" placeholder="VP of Procurement" />
               </div>
               <div class="form-group flex-1">
                 <label class="form-label">Company Name</label>
-                <input type="text" name="companyName" [(ngModel)]="modalContact.companyName" class="form-control" placeholder="Acme Corp" />
+                <input type="text" name="companyName" [(ngModel)]="modalContact.companyName" class="form-control" placeholder="Starlight Logistics" />
               </div>
             </div>
 
             <div class="modal-footer flex-between">
               <button type="button" (click)="closeModal()" class="btn btn-outline">Cancel</button>
-              <button type="submit" [disabled]="contactForm.invalid" class="btn btn-primary">
-                {{ isEditMode() ? 'Save Changes' : 'Create Contact' }}
+              <button type="submit" [disabled]="contactForm.invalid || isSaving()" class="btn btn-primary">
+                {{ isSaving() ? 'Saving...' : (isEditMode() ? 'Save Changes' : 'Create Contact') }}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      <!-- Import CSV Modal -->
+      <div *ngIf="isImportModalOpen()" class="modal-backdrop flex-center">
+        <div class="modal-card glass-panel animate-fade-in" style="max-width: 540px;">
+          <div class="modal-header flex-between">
+            <h2>📥 Import Contacts (CSV)</h2>
+            <button (click)="closeImportModal()" class="close-btn">✕</button>
+          </div>
+
+          <div class="import-instructions text-secondary text-sm" style="margin-bottom: 18px;">
+            <p style="margin-bottom: 6px;">Upload a CSV file containing your client contacts.</p>
+            <div style="background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 0.75rem; color: #a5b4fc;">
+              First Name, Last Name, Email, Phone, Job Title, Company Name
+            </div>
+            <div style="margin-top: 10px;">
+              <button type="button" (click)="downloadSampleCsv()" class="btn btn-outline btn-sm">
+                📄 Download Sample CSV Template
+              </button>
+            </div>
+          </div>
+
+          <div class="drop-zone" (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".csv" style="display: none;" />
+            <div style="font-size: 2rem; margin-bottom: 8px;">📂</div>
+            <p *ngIf="!selectedFile">Click or drag & drop a <strong>.csv</strong> file here</p>
+            <p *ngIf="selectedFile" style="color: var(--success); font-weight: 600;">
+              ✓ Selected: {{ selectedFile.name }} ({{ (selectedFile.size / 1024) | number:'1.1-1' }} KB)
+            </p>
+          </div>
+
+          <div *ngIf="importResult()" class="import-summary alert" [ngClass]="importResult()!.failedCount > 0 ? 'alert-danger' : 'alert-success'" style="margin-top: 16px;">
+            <strong>Result:</strong> {{ importResult()!.importedCount }} contacts created out of {{ importResult()!.totalProcessed }} processed.
+            <div *ngIf="importResult()!.errors.length" style="margin-top: 6px; max-height: 80px; overflow-y: auto;">
+              <div *ngFor="let err of importResult()!.errors" style="font-size: 0.75rem;">• {{ err }}</div>
+            </div>
+          </div>
+
+          <div class="modal-footer flex-between" style="margin-top: 24px;">
+            <button type="button" (click)="closeImportModal()" class="btn btn-outline">Close</button>
+            <button type="button" (click)="uploadCsv()" [disabled]="!selectedFile || isImporting()" class="btn btn-primary">
+              {{ isImporting() ? 'Importing File...' : 'Start CSV Import' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `,
   styles: [`
@@ -158,12 +213,11 @@ import { Contact } from '../../core/models/crm.models';
       -webkit-text-fill-color: transparent;
     }
 
-    /* Search */
     .filters-bar {
       padding: 16px 24px;
       display: flex;
       gap: 16px;
-      flex-wrap: wrap;
+      align-items: center;
     }
 
     .search-box {
@@ -175,7 +229,7 @@ import { Contact } from '../../core/models/crm.models';
       border-radius: var(--radius-sm);
       padding: 8px 14px;
       flex: 1;
-      max-width: 420px;
+      max-width: 440px;
     }
 
     .search-input {
@@ -190,17 +244,17 @@ import { Contact } from '../../core/models/crm.models';
     .stats-pill {
       font-size: 0.8125rem;
       color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 9999px;
     }
 
     .stat-val {
+      color: #ffffff;
       font-weight: 700;
-      color: var(--primary);
     }
 
-    /* Loading */
     .loading-state {
       padding: 80px 0;
       gap: 16px;
@@ -219,9 +273,7 @@ import { Contact } from '../../core/models/crm.models';
       to { transform: rotate(360deg); }
     }
 
-    .flex-col { flex-direction: column; }
-
-    /* Contact Grid */
+    /* Contacts Grid */
     .contacts-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -230,33 +282,35 @@ import { Contact } from '../../core/models/crm.models';
 
     .contact-card {
       padding: 24px;
+      border-radius: var(--radius-md);
       display: flex;
       flex-direction: column;
       gap: 8px;
       transition: transform var(--transition-fast), border-color var(--transition-fast);
+      position: relative;
     }
 
     .contact-card:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.15);
+      border-color: var(--primary);
     }
 
     .card-top {
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
 
     .contact-avatar {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(13, 148, 136, 0.2));
+      border: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      color: white;
+      font-weight: 800;
+      color: var(--primary);
       font-size: 1rem;
-      box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
     }
 
     .card-actions {
@@ -268,35 +322,32 @@ import { Contact } from '../../core/models/crm.models';
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
+      padding: 6px 8px;
       cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
       transition: all var(--transition-fast);
     }
 
     .icon-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
     }
 
     .icon-btn-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
       border-color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
     }
 
     .contact-name {
       font-size: 1.1rem;
       font-weight: 700;
-      color: white;
+      color: var(--text-primary);
     }
 
     .contact-title {
-      font-size: 0.875rem;
-      color: var(--secondary);
+      font-size: 0.8125rem;
+      color: var(--primary);
       font-weight: 600;
     }
 
@@ -306,12 +357,12 @@ import { Contact } from '../../core/models/crm.models';
     }
 
     .contact-meta {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-top: 10px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border-color);
     }
 
     .meta-row {
@@ -319,58 +370,52 @@ import { Contact } from '../../core/models/crm.models';
       align-items: center;
       gap: 8px;
       font-size: 0.8125rem;
+    }
+
+    .meta-val {
       color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .card-footer-date {
-      font-size: 0.6875rem;
-      margin-top: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: 0.7rem;
+      margin-top: 8px;
     }
 
     .empty-state {
       grid-column: 1 / -1;
-      padding: 60px 24px;
+      padding: 60px 20px;
+      text-align: center;
+      border-radius: var(--radius-md);
     }
 
-    /* Modal */
     .modal-backdrop {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.7);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px);
-      z-index: 100;
+      z-index: 1000;
     }
 
     .modal-card {
-      width: 100%;
-      max-width: 560px;
-      padding: 32px;
+      width: 90%;
+      max-width: 580px;
+      padding: 28px;
       border-radius: var(--radius-lg);
-      background-color: var(--bg-secondary);
-    }
-
-    .modal-header {
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border-color);
     }
 
     .modal-header h2 {
       font-size: 1.25rem;
-      font-weight: 800;
-      color: white;
+      font-weight: 700;
     }
 
     .close-btn {
       background: transparent;
       border: none;
-      color: var(--text-secondary);
-      font-size: 1.15rem;
+      color: var(--text-muted);
+      font-size: 1.25rem;
       cursor: pointer;
     }
 
@@ -384,18 +429,39 @@ import { Contact } from '../../core/models/crm.models';
     }
 
     .flex-1 { flex: 1; }
+    .flex-col { flex-direction: column; }
 
     .modal-footer {
-      margin-top: 30px;
+      margin-top: 24px;
       padding-top: 16px;
       border-top: 1px solid var(--border-color);
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.01);
+      transition: all var(--transition-fast);
+    }
+
+    .drop-zone:hover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.03);
     }
   `]
 })
 export class ContactsComponent implements OnInit {
   private readonly contactService = inject(ContactService);
+  private readonly toastService = inject(ToastService);
 
   readonly isLoading = signal(true);
+  readonly isSaving = signal(false);
+  readonly isExporting = signal(false);
+  readonly isImporting = signal(false);
+
   readonly allContacts = signal<Contact[]>([]);
   readonly filteredContacts = signal<Contact[]>([]);
 
@@ -405,6 +471,11 @@ export class ContactsComponent implements OnInit {
   readonly isModalOpen = signal(false);
   readonly isEditMode = signal(false);
   modalContact: any = this.resetModal();
+
+  // CSV Import state
+  readonly isImportModalOpen = signal(false);
+  selectedFile: File | null = null;
+  readonly importResult = signal<ImportCsvResult | null>(null);
 
   ngOnInit(): void {
     this.loadContacts();
@@ -418,7 +489,10 @@ export class ContactsComponent implements OnInit {
         this.applyFilter();
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: () => {
+        this.isLoading.set(false);
+        this.toastService.error('Error', 'Failed to load contacts directory.');
+      }
     });
   }
 
@@ -462,6 +536,7 @@ export class ContactsComponent implements OnInit {
   }
 
   saveContact(): void {
+    this.isSaving.set(true);
     const payload = {
       firstName: this.modalContact.firstName,
       lastName: this.modalContact.lastName,
@@ -478,17 +553,27 @@ export class ContactsComponent implements OnInit {
           this.allContacts.set(list);
           this.applyFilter();
           this.closeModal();
+          this.isSaving.set(false);
+          this.toastService.success('Contact Saved', `${updated.firstName} ${updated.lastName} updated.`);
         },
-        error: (err) => console.error('Failed to update contact', err)
+        error: () => {
+          this.isSaving.set(false);
+          this.toastService.error('Error', 'Failed to update contact.');
+        }
       });
     } else {
       this.contactService.createContact(payload).subscribe({
         next: (created) => {
-          this.allContacts.update(list => [...list, created]);
+          this.allContacts.update(list => [created, ...list]);
           this.applyFilter();
           this.closeModal();
+          this.isSaving.set(false);
+          this.toastService.success('Contact Created', `Added ${created.firstName} ${created.lastName}.`);
         },
-        error: (err) => console.error('Failed to create contact', err)
+        error: () => {
+          this.isSaving.set(false);
+          this.toastService.error('Error', 'Failed to create contact.');
+        }
       });
     }
   }
@@ -499,10 +584,83 @@ export class ContactsComponent implements OnInit {
         next: () => {
           this.allContacts.update(list => list.filter(c => c.id !== id));
           this.applyFilter();
+          this.toastService.success('Contact Removed', 'Contact was removed.');
         },
-        error: (err) => console.error('Failed to delete contact', err)
+        error: () => this.toastService.error('Error', 'Failed to delete contact.')
       });
     }
+  }
+
+  exportCsv(): void {
+    this.isExporting.set(true);
+    this.contactService.exportCsv().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `aerocrm_contacts_${new Date().toISOString().substring(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        this.isExporting.set(false);
+        this.toastService.success('Export Ready', 'Contacts exported to CSV.');
+      },
+      error: () => {
+        this.isExporting.set(false);
+        this.toastService.error('Export Failed', 'Could not export contacts.');
+      }
+    });
+  }
+
+  openImportModal(): void {
+    this.selectedFile = null;
+    this.importResult.set(null);
+    this.isImportModalOpen.set(true);
+  }
+
+  closeImportModal(): void {
+    this.isImportModalOpen.set(false);
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+    }
+  }
+
+  uploadCsv(): void {
+    if (!this.selectedFile) return;
+
+    this.isImporting.set(true);
+    this.contactService.importCsv(this.selectedFile).subscribe({
+      next: (result) => {
+        this.importResult.set(result);
+        this.isImporting.set(false);
+        this.toastService.success('CSV Import Completed', `${result.importedCount} contacts imported.`);
+        this.loadContacts();
+      },
+      error: () => {
+        this.isImporting.set(false);
+        this.toastService.error('Import Failed', 'Failed to process CSV file.');
+      }
+    });
+  }
+
+  downloadSampleCsv(): void {
+    const sample = "First Name,Last Name,Email,Phone,Job Title,Company Name\n" +
+      "Diana,Prince,diana@themyscira.org,+1 555-0188,VP of Relations,Themyscira Global\n" +
+      "Clark,Kent,clark@dailyplanet.com,+1 555-0199,Senior Journalist,Daily Planet Corp\n";
+    const blob = new Blob([sample], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "aerocrm_contacts_sample.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 
   private resetModal() {

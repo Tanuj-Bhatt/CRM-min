@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using CRM.Business.Security;
@@ -12,11 +14,16 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
+var connectionString = 
+    Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<CRMContext>(options =>
     options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        connectionString,
         new MySqlServerVersion(new Version(8, 0, 46))
     ));
+
 // ---------------------------------------------------------------------------
 // Dependency Injection – Data layer
 // ---------------------------------------------------------------------------
@@ -27,26 +34,45 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILeadService, LeadService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IClaudeService, ClaudeService>();
+builder.Services.AddScoped<IAutomationService, AutomationService>();
 
 builder.Services.AddHttpClient();
+
+// ---------------------------------------------------------------------------
+// Rate Limiting (Brute-force protection)
+// ---------------------------------------------------------------------------
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("AuthRatePolicy", opt =>
+    {
+        opt.PermitLimit = 15;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+});
 
 // ---------------------------------------------------------------------------
 // JWT Authentication
 // ---------------------------------------------------------------------------
 var jwtKey =
-    builder.Configuration["Jwt:Key"]
-    ?? "SUPER_SECRET_KEY_2026";
+    Environment.GetEnvironmentVariable("JWT_SECRET")
+    ?? builder.Configuration["Jwt:Key"]
+    ?? "SUPER_SECRET_KEY_2026_CRM_SYSTEM_JWT_TOKEN_SECRET_KEY";
 
 var jwtIssuer =
-    builder.Configuration["Jwt:Issuer"]
+    Environment.GetEnvironmentVariable("JWT_ISSUER")
+    ?? builder.Configuration["Jwt:Issuer"]
     ?? "CRM.API";
 
 var jwtAudience =
-    builder.Configuration["Jwt:Audience"]
+    Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+    ?? builder.Configuration["Jwt:Audience"]
     ?? "CRM.Client";
 
 builder.Services
@@ -138,6 +164,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAngularDev");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 

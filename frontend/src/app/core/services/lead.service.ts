@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Lead, ActivityLog } from '../models/crm.models';
+import { Lead, ActivityLog, PagedResult, SendEmailDto, ImportCsvResult } from '../models/crm.models';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +13,18 @@ export class LeadService {
 
   getLeads(): Observable<Lead[]> {
     return this.http.get<Lead[]>(this.baseUrl);
+  }
+
+  getPagedLeads(page = 1, pageSize = 20, search?: string, status?: string, source?: string): Observable<PagedResult<Lead>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    if (search) params = params.set('search', search);
+    if (status) params = params.set('status', status);
+    if (source) params = params.set('source', source);
+
+    return this.http.get<PagedResult<Lead>>(`${this.baseUrl}/paged`, { params });
   }
 
   getLeadById(id: string): Observable<Lead> {
@@ -45,5 +57,19 @@ export class LeadService {
 
   getDraftEmail(leadId: string): Observable<{ email: string }> {
     return this.http.get<{ email: string }>(`${this.baseUrl}/${leadId}/draft-email`);
+  }
+
+  sendEmail(leadId: string, emailDto: SendEmailDto): Observable<{ message: string; activity: ActivityLog }> {
+    return this.http.post<{ message: string; activity: ActivityLog }>(`${this.baseUrl}/${leadId}/send-email`, emailDto);
+  }
+
+  exportCsv(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/export/csv`, { responseType: 'blob' });
+  }
+
+  importCsv(file: File): Observable<ImportCsvResult> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<ImportCsvResult>(`${this.baseUrl}/import/csv`, formData);
   }
 }
