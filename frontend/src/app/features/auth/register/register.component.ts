@@ -108,19 +108,19 @@ import { AuthService } from '../../../core/services/auth.service';
   `,
   styles: [`
     .auth-container {
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
       background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent),
                   radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.1), transparent),
                   #070a13;
-      padding: 20px;
+      padding: 24px 16px;
       overflow-y: auto;
     }
     
     .auth-card {
       width: 100%;
       max-width: 500px;
-      padding: 40px;
+      padding: 36px 30px;
       border-radius: var(--radius-lg);
       margin: auto;
     }
@@ -211,6 +211,19 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .auth-footer a:hover {
       color: var(--primary);
+    }
+
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 24px 16px;
+      }
+      .auth-header h1 {
+        font-size: 1.5rem;
+      }
+      .row-flex {
+        flex-direction: column;
+        gap: 0;
+      }
     }
   `]
 })

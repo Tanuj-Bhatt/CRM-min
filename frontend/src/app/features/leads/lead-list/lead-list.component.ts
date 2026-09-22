@@ -19,7 +19,7 @@ import { Lead, LeadStatus, User, ImportCsvResult } from '../../../core/models/cr
           <h1>Sales Pipeline</h1>
           <p class="text-secondary">Track deals through the enterprise cycle with AI-assisted insights and CSV tools.</p>
         </div>
-        <div class="actions flex-center gap-10">
+        <div class="actions pipeline-actions">
           <div class="view-toggles glass-panel">
             <button (click)="viewMode.set('kanban')" [class.active]="viewMode() === 'kanban'" class="toggle-btn">
               📋 Board
@@ -29,10 +29,10 @@ import { Lead, LeadStatus, User, ImportCsvResult } from '../../../core/models/cr
             </button>
           </div>
           <button (click)="exportCsv()" [disabled]="isExporting()" class="btn btn-outline" title="Export entire pipeline to CSV">
-            <span>📥</span> {{ isExporting() ? 'Exporting...' : 'Export CSV' }}
+            <span>📥</span> {{ isExporting() ? 'Exporting...' : 'Export' }}
           </button>
           <button (click)="openImportModal()" class="btn btn-secondary" title="Bulk import leads from CSV file">
-            <span>📤</span> Import CSV
+            <span>📤</span> Import
           </button>
           <button (click)="openCreateModal()" class="btn btn-primary">
             <span>➕</span> New Lead
@@ -751,6 +751,66 @@ import { Lead, LeadStatus, User, ImportCsvResult } from '../../../core/models/cr
     .drop-zone:hover {
       border-color: var(--primary);
       background: rgba(99, 102, 241, 0.03);
+    }
+
+    .pipeline-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Responsive Breakpoints for Lead List */
+    @media (max-width: 1023px) {
+      .kanban-column {
+        height: calc(100vh - 250px);
+        min-height: 480px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .kanban-board {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 14px;
+        padding-bottom: 16px;
+      }
+
+      .kanban-column {
+        min-width: 82vw;
+        max-width: 85vw;
+        scroll-snap-align: start;
+        flex-shrink: 0;
+        height: calc(100vh - 260px);
+        min-height: 420px;
+      }
+
+      .pipeline-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .pipeline-actions button {
+        flex: 1 1 auto;
+      }
+    }
+
+    @media (max-width: 639px) {
+      .filters-bar {
+        padding: 12px;
+      }
+      .modal-card {
+        padding: 16px 12px;
+      }
+      .modal-footer {
+        flex-direction: column-reverse;
+        gap: 8px;
+      }
+      .modal-footer button {
+        width: 100%;
+      }
     }
   `]
 })

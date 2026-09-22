@@ -69,11 +69,13 @@ import { AuthService } from '../../../core/services/auth.service';
   `,
   styles: [`
     .auth-container {
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
       background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent),
                   radial-gradient(circle at bottom left, rgba(13, 148, 136, 0.1), transparent),
                   #070a13;
+      padding: 24px 16px;
+      overflow-y: auto;
     }
     
     .auth-card {
@@ -153,6 +155,15 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .auth-footer a:hover {
       color: var(--secondary);
+    }
+
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 28px 18px;
+      }
+      .auth-header h1 {
+        font-size: 1.5rem;
+      }
     }
   `]
 })

@@ -751,6 +751,13 @@ import { AutomationSettings, WebhookLeadPayload } from '../../core/models/crm.mo
       .automations-grid { grid-template-columns: 1fr; }
       .score-tiers-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
+      .automation-card { padding: 18px 14px; }
+      .copy-input-group { flex-wrap: wrap; }
+      .copy-input-group input { width: 100%; min-width: 0; }
+      .code-snippet-box pre { font-size: 0.72rem; overflow-x: auto; max-width: 100%; }
+      .sync-flow-diagram { flex-direction: column; gap: 10px; }
+      .flow-arrow { transform: rotate(90deg); }
+      .modal-card { padding: 18px 14px; width: 95%; }
     }
   `]
 })

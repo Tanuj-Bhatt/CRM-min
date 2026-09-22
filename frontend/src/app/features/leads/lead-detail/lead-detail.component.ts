@@ -524,6 +524,35 @@ import { Lead, ActivityLog, ActivityType } from '../../../core/models/crm.models
       padding-top: 16px;
       border-top: 1px solid var(--border-color);
     }
+
+    /* Responsive Lead Detail Styles */
+    @media (max-width: 767px) {
+      .detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .profile-card, .ai-card, .activity-form-card {
+        padding: 16px 14px;
+      }
+      .timeline-item {
+        padding: 12px;
+        gap: 10px;
+      }
+      .draft-actions {
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .modal-card {
+        padding: 16px 12px;
+        width: 95%;
+      }
+    }
   `]
 })
 export class LeadDetailComponent implements OnInit {

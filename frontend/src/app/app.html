@@ -1,37 +1,53 @@
 <ng-container *ngIf="authService.currentUser() as user; else noAuth">
   <div class="app-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar glass-panel">
+    <!-- Backdrop overlay for mobile drawer -->
+    <div 
+      class="sidebar-backdrop" 
+      *ngIf="isMobileNavOpen()" 
+      (click)="closeMobileNav()"
+      aria-hidden="true"
+    ></div>
+
+    <!-- Sidebar Navigation / Drawer -->
+    <aside class="sidebar glass-panel" [class.open]="isMobileNavOpen()">
       <div class="sidebar-brand">
-        <div class="brand-logo">▲</div>
-        <div class="brand-text">
-          <span class="brand-name">AeroCRM</span>
-          <span class="brand-version">v24.0 Enterprise</span>
+        <div class="brand-left">
+          <div class="brand-logo">▲</div>
+          <div class="brand-text">
+            <span class="brand-name">AeroCRM</span>
+            <span class="brand-version">v24.0 Enterprise</span>
+          </div>
         </div>
+        <button 
+          class="mobile-close-btn" 
+          (click)="closeMobileNav()" 
+          title="Close Navigation"
+          aria-label="Close Navigation"
+        >✕</button>
       </div>
 
       <nav class="sidebar-nav">
-        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+        <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMobileNav()" class="nav-item">
           <span class="nav-icon">📊</span>
           <span class="nav-label">Dashboard</span>
         </a>
 
-        <a routerLink="/leads" routerLinkActive="active" class="nav-item">
+        <a routerLink="/leads" routerLinkActive="active" (click)="closeMobileNav()" class="nav-item">
           <span class="nav-icon">💼</span>
           <span class="nav-label">Leads Pipeline</span>
         </a>
 
-        <a routerLink="/contacts" routerLinkActive="active" class="nav-item">
+        <a routerLink="/contacts" routerLinkActive="active" (click)="closeMobileNav()" class="nav-item">
           <span class="nav-icon">👥</span>
           <span class="nav-label">Contacts Directory</span>
         </a>
 
-        <a *ngIf="user.role === 'Admin' || user.role === 'Manager'" routerLink="/team" routerLinkActive="active" class="nav-item">
+        <a *ngIf="user.role === 'Admin' || user.role === 'Manager'" routerLink="/team" routerLinkActive="active" (click)="closeMobileNav()" class="nav-item">
           <span class="nav-icon">🛡️</span>
           <span class="nav-label">Team & Security</span>
         </a>
 
-        <a routerLink="/automations" routerLinkActive="active" class="nav-item">
+        <a routerLink="/automations" routerLinkActive="active" (click)="closeMobileNav()" class="nav-item">
           <span class="nav-icon">⚡</span>
           <span class="nav-label">Automations Hub</span>
         </a>
@@ -54,12 +70,23 @@
     <div class="main-panel">
       <header class="app-header glass-panel">
         <div class="header-left">
+          <!-- Mobile Hamburger Toggle -->
+          <button 
+            class="hamburger-btn" 
+            (click)="toggleMobileNav()" 
+            aria-label="Toggle navigation drawer"
+            title="Open Menu"
+          >
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+          </button>
           <span class="org-indicator">🏢</span>
-          <h2>{{ user.organizationName }}</h2>
+          <h2 class="org-title" [title]="user.organizationName">{{ user.organizationName }}</h2>
         </div>
         <div class="header-right">
-          <button (click)="logout()" class="btn btn-outline btn-sm">
-            <span>🚪</span> Logout
+          <button (click)="logout()" class="btn btn-outline btn-sm logout-btn">
+            <span>🚪</span> <span class="logout-text">Logout</span>
           </button>
         </div>
       </header>

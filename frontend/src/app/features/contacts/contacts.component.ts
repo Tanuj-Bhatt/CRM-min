@@ -17,12 +17,12 @@ import { Contact, ImportCsvResult } from '../../core/models/crm.models';
           <h1>Contacts Directory</h1>
           <p class="text-secondary">Manage enterprise client relationships, contact cards, and CSV integrations.</p>
         </div>
-        <div class="actions flex-center gap-10">
+        <div class="actions contact-actions">
           <button (click)="exportCsv()" [disabled]="isExporting()" class="btn btn-outline" title="Export contacts to CSV">
-            <span>📥</span> {{ isExporting() ? 'Exporting...' : 'Export CSV' }}
+            <span>📥</span> {{ isExporting() ? 'Exporting...' : 'Export' }}
           </button>
           <button (click)="openImportModal()" class="btn btn-secondary" title="Bulk import contacts from CSV">
-            <span>📤</span> Import CSV
+            <span>📤</span> Import
           </button>
           <button (click)="openCreateModal()" class="btn btn-primary">
             <span>➕</span> New Contact
@@ -450,6 +450,44 @@ import { Contact, ImportCsvResult } from '../../core/models/crm.models';
     .drop-zone:hover {
       border-color: var(--primary);
       background: rgba(99, 102, 241, 0.03);
+    }
+
+    .contact-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Responsive Contact Styles */
+    @media (max-width: 767px) {
+      .contact-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .contact-actions button {
+        flex: 1 1 auto;
+      }
+      .contacts-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 639px) {
+      .modal-card {
+        padding: 16px 12px;
+      }
+      .modal-footer {
+        flex-direction: column-reverse;
+        gap: 8px;
+      }
+      .modal-footer button {
+        width: 100%;
+      }
+      .contact-card {
+        padding: 16px;
+      }
     }
   `]
 })

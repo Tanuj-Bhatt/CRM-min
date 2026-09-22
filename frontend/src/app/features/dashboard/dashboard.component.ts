@@ -222,17 +222,27 @@ import { forkJoin } from 'rxjs';
     .dashboard-container {
       display: flex;
       flex-direction: column;
-      gap: 32px;
+      gap: 24px;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .welcome-section {
+      gap: 16px;
     }
 
     .welcome-section h1 {
-      font-size: 2rem;
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
       font-weight: 800;
       letter-spacing: -0.03em;
       margin-bottom: 6px;
       background: linear-gradient(to right, #ffffff, #9ca3af);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+    }
+
+    .welcome-section p {
+      font-size: clamp(0.8rem, 1.5vw, 0.95rem);
     }
 
     .loading-state {
@@ -257,22 +267,25 @@ import { forkJoin } from 'rxjs';
     .kpi-card {
       display: flex;
       align-items: center;
-      padding: 24px;
-      gap: 20px;
+      padding: 20px;
+      gap: 16px;
       position: relative;
       overflow: hidden;
+      min-width: 0;
     }
 
     .kpi-icon {
-      font-size: 1.75rem;
-      width: 54px;
-      height: 54px;
+      font-size: 1.6rem;
+      width: 50px;
+      height: 50px;
+      min-width: 50px;
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
       background-color: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-color);
+      flex-shrink: 0;
     }
 
     .icon-blue { color: var(--primary); box-shadow: 0 0 15px rgba(99, 102, 241, 0.15); }
@@ -284,25 +297,33 @@ import { forkJoin } from 'rxjs';
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .kpi-value {
-      font-size: 1.75rem;
+      font-size: clamp(1.3rem, 2vw, 1.75rem);
       font-weight: 800;
       color: #ffffff;
-      line-height: 1;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .kpi-label {
-      font-size: 0.8125rem;
+      font-size: 0.78rem;
       color: var(--text-secondary);
       font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .kpi-badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 10px;
+      right: 10px;
       font-size: 0.65rem;
       font-weight: 700;
       padding: 2px 6px;
@@ -318,15 +339,17 @@ import { forkJoin } from 'rxjs';
 
     /* Chart row */
     .charts-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
       gap: 20px;
-      flex-wrap: wrap;
       margin-bottom: 24px;
+      width: 100%;
     }
 
     .chart-card {
-      padding: 24px;
-      min-width: 320px;
+      padding: 22px;
+      min-width: 0;
+      width: 100%;
     }
 
     .chart-card h3 {
@@ -341,11 +364,14 @@ import { forkJoin } from 'rxjs';
       justify-content: center;
       align-items: center;
       padding-top: 10px;
+      width: 100%;
+      overflow: hidden;
     }
 
     .pipeline-svg {
       width: 100%;
-      max-height: 180px;
+      height: auto;
+      max-height: 200px;
     }
 
     .chart-bar {
@@ -390,14 +416,16 @@ import { forkJoin } from 'rxjs';
 
     /* Lists row */
     .lists-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
       gap: 20px;
-      flex-wrap: wrap;
+      width: 100%;
     }
 
     .list-card {
-      padding: 24px;
-      min-width: 320px;
+      padding: 22px;
+      min-width: 0;
+      width: 100%;
     }
 
     .list-header {
@@ -424,12 +452,13 @@ import { forkJoin } from 'rxjs';
     .lead-name-cell {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .lead-avatar {
       width: 32px;
       height: 32px;
+      min-width: 32px;
       background: rgba(255,255,255,0.05);
       border: 1px solid var(--border-color);
       border-radius: 50%;
@@ -439,6 +468,7 @@ import { forkJoin } from 'rxjs';
       font-weight: 700;
       font-size: 0.75rem;
       color: var(--text-secondary);
+      flex-shrink: 0;
     }
 
     .clickable-row {
@@ -453,7 +483,7 @@ import { forkJoin } from 'rxjs';
     .leaderboard-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .leaderboard-item {
@@ -461,17 +491,67 @@ import { forkJoin } from 'rxjs';
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
+      gap: 10px;
+    }
+
+    .rep-info {
+      min-width: 0;
+    }
+
+    .rep-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      font-size: 0.85rem;
     }
 
     .rank-badge {
       font-size: 1.1rem;
       min-width: 24px;
       text-align: center;
+      flex-shrink: 0;
+    }
+
+    .rep-revenue {
+      font-size: 0.9rem;
+      white-space: nowrap;
     }
 
     .flex-2 { flex: 2; }
     .flex-1 { flex: 1; }
     .flex-direction-column { flex-direction: column; }
+
+    /* Mobile specific adjustments */
+    @media (max-width: 639px) {
+      .welcome-section {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .welcome-section .actions {
+        width: 100%;
+      }
+      .welcome-section .actions a {
+        width: 100%;
+        text-align: center;
+      }
+      .kpi-card {
+        padding: 14px;
+        gap: 12px;
+      }
+      .kpi-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        font-size: 1.3rem;
+      }
+      .kpi-value {
+        font-size: 1.35rem;
+      }
+      .chart-card, .list-card {
+        padding: 16px 12px;
+      }
+    }
   `]
 })
 export class DashboardComponent implements OnInit {

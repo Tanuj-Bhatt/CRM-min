@@ -118,8 +118,13 @@ import { User } from '../../core/models/crm.models';
     .av-agent{background:linear-gradient(135deg,#6b7280,#9ca3af)}
     .you-tag{font-size:.72rem;font-weight:700;color:var(--text-muted);background:var(--input-bg);padding:3px 9px;border-radius:9999px;border:1px solid var(--border-color)}
     .btn-del{background:transparent;border:1px solid rgba(239,68,68,.2);color:#f87171}
-    .btn-del:hover{background:rgba(239,68,68,.08);border-color:var(--danger)}
-    @media(max-width:640px){.custom-table th:nth-child(4),.custom-table td:nth-child(4){display:none}}
+    @media(max-width:640px){
+      .custom-table th:nth-child(4),.custom-table td:nth-child(4){display:none}
+      .stat-card { padding: 14px; gap: 10px; }
+      .stat-icon { width: 38px; height: 38px; min-width: 38px; font-size: 1.2rem; }
+      .stat-value { font-size: 1.3rem; }
+      .page-header button { width: 100%; text-align: center; }
+    }
   `]
 })
 export class TeamComponent implements OnInit {
